@@ -2,7 +2,7 @@ import sqlite3
 import os
 
 # Chemin vers la base de données SQLite
-DATABASE_PATH = 'game.db'
+DATABASE_PATH = os.getenv('DATABASE_PATH', 'gestion_inventaire.db')
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE_PATH)
