@@ -1,9 +1,8 @@
 import os
-import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
-from init_db import get_db_connection
+from models.init_db import get_db_connection
 
 # Charger les variables d'environnement
 load_dotenv()
