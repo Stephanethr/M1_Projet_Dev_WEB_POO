@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 from init_db import get_db_connection
+from back.hero_class import Hero
 
 # Charger les variables d'environnement
 load_dotenv()
@@ -20,13 +21,143 @@ bcrypt = Bcrypt(app)
 # Route pour la page d'accueil (affiche des informations sur l'utilisateur connecté)
 @app.route('/')
 def home():
-    # Vérifie si l'utilisateur est connecté
-    if 'loggedin' in session:
-        # Rediriger vers la page d'inventaire si l'utilisateur est connecté
-        return redirect(url_for('inventory'))
-    else:
+    if 'loggedin' not in session:
         flash("Veuillez vous connecter.", 'info')
         return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Récupérer les informations de l'utilisateur
+    cursor.execute('SELECT user_login, user_date_new, user_date_login FROM user WHERE user_id = ?', (session['user_id'],))
+    user = cursor.fetchone()
+
+    if not user:
+        session.clear()
+        flash("Votre session est invalide. Veuillez vous reconnecter.", 'danger')
+        return redirect(url_for('login'))
+
+    # Récupérer les héros associés à l'utilisateur
+    cursor.execute('SELECT id, name, classe FROM heroes WHERE user_id = ?', (session['user_id'],))
+    heroes = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'home.html',
+        loggedin=True,
+        username=user['user_login'],
+        user_date_new=user['user_date_new'],
+        user_date_login=user['user_date_login'],
+        heroes=heroes
+    )
+
+
+@app.route('/create_hero', methods=['POST'])
+def create_hero():
+    if 'loggedin' not in session:
+        flash("Veuillez vous connecter.", 'info')
+        return redirect(url_for('login'))
+
+    # Récupérer les données du formulaire
+    name = request.form.get('name')
+    classe = request.form.get('classe')
+
+    if not name or not classe:
+        flash("Tous les champs sont obligatoires pour créer un héros.", 'danger')
+        return redirect(url_for('home'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Insérer un nouveau héros dans la base de données
+    cursor.execute('''
+        INSERT INTO heroes (name, classe, level, xp, user_id)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (name, classe, 1, 0, session['user_id']))
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    flash(f"Héros {name} créé avec succès !", 'success')
+    return redirect(url_for('home'))
+
+@app.route('/heroes')
+def list_heroes():
+    if 'loggedin' not in session:
+        flash("Veuillez vous connecter.", 'info')
+        return redirect(url_for('login'))
+
+    # Récupérer les héros de l'utilisateur connecté (par exemple via une requête SQL ou un fichier)
+    user_id = session['user_id']
+    # Supposons que tu as une méthode statique `Hero.load_by_user_id` pour récupérer tous les héros d'un utilisateur
+    heroes = Hero.load_by_user_id(user_id)
+
+    return render_template('heroes.html', heroes=heroes)
+
+@app.route('/edit_hero/<int:hero_id>', methods=['GET', 'POST'])
+def edit_hero(hero_id):
+    if 'loggedin' not in session:
+        flash("Veuillez vous connecter.", 'info')
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Récupérer les informations du héros
+    cursor.execute('SELECT * FROM heroes WHERE id = ? AND user_id = ?', (hero_id, session['user_id']))
+    hero = cursor.fetchone()
+
+    if not hero:
+        flash("Héros introuvable ou non autorisé.", 'danger')
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        name = request.form['name']
+        classe = request.form['classe']
+
+        if not name or not classe:
+            flash("Tous les champs sont obligatoires.", 'danger')
+            return redirect(url_for('edit_hero', hero_id=hero_id))
+
+        # Mettre à jour le héros dans la base de données
+        cursor.execute('UPDATE heroes SET name = ?, classe = ? WHERE id = ?', (name, classe, hero_id))
+        conn.commit()
+        flash("Héros mis à jour avec succès.", 'success')
+        return redirect(url_for('home'))
+
+    cursor.close()
+    conn.close()
+
+    return render_template('edit_hero.html', hero=hero)
+
+@app.route('/update_hero/<int:hero_id>', methods=['POST'])
+def update_hero(hero_id):
+    if 'loggedin' not in session:
+        flash("Veuillez vous connecter.", 'info')
+        return redirect(url_for('login'))
+
+    xp_gained = int(request.form.get('xp', 0))
+    if xp_gained <= 0:
+        flash("XP invalide.", 'danger')
+        return redirect(url_for('list_heroes'))
+
+    # Charger le héros (par exemple via une méthode statique Hero.load_by_id)
+    hero = Hero.load_by_id(hero_id)
+
+    if not hero:
+        flash("Héros introuvable.", 'danger')
+        return redirect(url_for('list_heroes'))
+
+    # Ajouter l'expérience et mettre à jour
+    hero.setXP(xp_gained)
+    hero.save()
+
+    flash(f"Le héros {hero._nom} a gagné {xp_gained} XP et est maintenant niveau {hero._lvl} !", 'success')
+    return redirect(url_for('list_heroes'))
+
 
 # Route pour se connecter
 @app.route('/login', methods=['GET', 'POST'])
@@ -54,7 +185,7 @@ def login():
             session['username'] = user['user_login']
             flash('Connexion réussie!', 'success')
             # Rediriger directement vers l'inventaire après connexion
-            return redirect(url_for('inventory'))
+            return redirect(url_for('home'))
         else:
             flash('Email ou mot de passe incorrect !', 'danger')
 

@@ -2,7 +2,7 @@ import sqlite3
 import os
 
 # Chemin vers la base de données SQLite
-DATABASE_PATH = os.getenv('DATABASE_PATH', 'gestion_inventaire.db')
+DATABASE_PATH = os.getenv('DATABASE_PATH', 'game.db')
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE_PATH)
@@ -34,14 +34,16 @@ def init_db():
     )
     ''')
 
-
     # Ajouter des types d'objets par défaut
-    cursor.execute('''insert into item_types (type_name) values ('potion')''')
-    cursor.execute('''insert into item_types (type_name) values ('plante')''')
-    cursor.execute('''insert into item_types (type_name) values ('arme')''')
-    cursor.execute('''insert into item_types (type_name) values ('clé')''')
-    cursor.execute('''insert into item_types (type_name) values ('armure')''')
-
+    cursor.execute('''
+    INSERT OR IGNORE INTO item_types (id, type_name) 
+    VALUES 
+        (1, 'potion'), 
+        (2, 'plante'), 
+        (3, 'arme'), 
+        (4, 'clé'), 
+        (5, 'armure')
+    ''')
 
     # Créer la table `inventory` associée à chaque utilisateur
     cursor.execute('''
@@ -55,6 +57,53 @@ def init_db():
         FOREIGN KEY (type_id) REFERENCES item_types(id)
     )
     ''')
+
+    # Créer la table `heroes`
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS heroes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        race TEXT NOT NULL,
+        classe TEXT NOT NULL,
+        level INTEGER NOT NULL DEFAULT 1,
+        xp INTEGER NOT NULL DEFAULT 0,
+        user_id INTEGER NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user(user_id)
+    )
+    ''')
+
+    # Créer la table `hero_stats`
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS hero_stats (
+        hero_id INTEGER NOT NULL,
+        stat_name TEXT NOT NULL,
+        stat_value INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (hero_id, stat_name),
+        FOREIGN KEY (hero_id) REFERENCES heroes(id)
+    )
+    ''')
+
+    # Créer la table `hero_equipments`
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS hero_equipments (
+        hero_id INTEGER NOT NULL,
+        equipment_name TEXT NOT NULL,
+        PRIMARY KEY (hero_id, equipment_name),
+        FOREIGN KEY (hero_id) REFERENCES heroes(id)
+    )
+    ''')
+
+    # Créer la table `hero_bag`
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS hero_bag (
+        hero_id INTEGER NOT NULL,
+        item_name TEXT NOT NULL,
+        PRIMARY KEY (hero_id, item_name),
+        FOREIGN KEY (hero_id) REFERENCES heroes(id)
+    )
+    ''')
+
+    # Ajouter d'autres tables ou relations si nécessaire...
 
     conn.commit()
     cursor.close()

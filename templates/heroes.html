@@ -1,0 +1,6 @@
+<h1>Vos Héros</h1>
+<ul>
+    {% for hero in heroes %}
+        <li>{{ hero._nom }} - Niveau : {{ hero._lvl }} - Classe : {{ hero._classe }}</li>
+    {% endfor %}
+</ul>
