@@ -8,8 +8,8 @@ class HerosDb(Heros):
     """Classe gérant la persistance des héros en base de données"""
     
     def __init__(self, heros: Heros):
-        self.id = random.randint(1, 100000)
         # On copie tous les attributs du héros
+        self.id = None
         self.__dict__.update(heros.__dict__)
         
     @staticmethod
@@ -25,6 +25,7 @@ class HerosDb(Heros):
         print(self.__dict__)
 
         if self.id is None:
+            self.id = random.randint(1, 1000000)
             cursor.execute('''
                 INSERT INTO heros (
                     nom, race, classe, niveau, experience, proprietaire,
