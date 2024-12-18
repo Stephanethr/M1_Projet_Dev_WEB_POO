@@ -38,21 +38,23 @@ def home():
         return redirect(url_for('login'))
 
     # Récupérer les héros associés à l'utilisateur
-    cursor.execute('SELECT id, name, classe FROM heroes WHERE user_id = ?', (session['user_id'],))
+    cursor.execute('SELECT * FROM heros WHERE proprietaire = ?', (session['user_id'],))
     heroes = cursor.fetchall()
+    print(heroes)
 
-    cursor.close()
+    # Mettre les héros en session
+    session['heroes'] = [dict(hero) for hero in heroes]
+
     conn.close()
+    print(session['heroes'])
 
     return render_template(
         'home.html',
         loggedin=True,
-        username=user['user_login'],
-        user_date_new=user['user_date_new'],
-        user_date_login=user['user_date_login'],
-        heroes=heroes
+        user_name=user['user_login'],
+        user_last_login=user['user_date_login'],
+        heroes=session['heroes']
     )
-
 
 @app.route('/create_hero', methods=['POST'])
 def create_hero():

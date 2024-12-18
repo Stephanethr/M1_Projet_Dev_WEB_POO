@@ -1,4 +1,4 @@
-from rpg_avatar import Avatar, RaceType, ClassType
+from .rpg_avatar import Avatar, RaceType, ClassType
 import math, random
 
 MULTIPLICATEUR = 1.25

@@ -3,7 +3,7 @@ import random
 from enum import Enum
 from dataclasses import dataclass
 from typing import Dict
-from rpg_objet import Objet, Equipement, Consommable
+from .rpg_objet import Objet, Equipement, Consommable
 from abc import ABC, abstractmethod
 
 # Enums pour les types
