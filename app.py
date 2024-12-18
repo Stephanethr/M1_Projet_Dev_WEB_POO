@@ -127,12 +127,6 @@ def toggle_equipment(hero_id, equip_id):
     # Retour à la vue du héros
     return redirect(url_for('view_hero', hero_id=hero_id))
 
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
-@app.route('/create_hero', methods=['POST'])
-def create_hero():
 @app.route('/insert_hero', methods=['POST'])
 def insert_hero():
     if 'loggedin' not in session:
@@ -155,7 +149,7 @@ def insert_hero():
         race_type = RaceType(race)
     except ValueError:
         flash("Classe ou race invalide.", 'danger')
-        return redirect(url_for('create_hero_form'))
+        return redirect(url_for('create_hero'))
 
     try:
         # Créer le héros
@@ -163,6 +157,7 @@ def insert_hero():
 
         # Sauvegarder le héros dans la base de données
         hero_db = HerosDb(hero)
+        hero_db.proprietaire = session['user_id']
         hero_db.save()
 
         flash(f"Héros {name} créé avec succès !", 'success')

@@ -16,6 +16,11 @@ def add_heroes_for_user(user_id):
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    cursor.execute('DELETE FROM heros;')
+    cursor.execute("DELETE FROM SQLITE_SEQUENCE WHERE name='heros';")
+    cursor.execute('DELETE FROM equipements')
+    cursor.execute('DELETE FROM consommables')
+
     heroes_to_add = [
         Heros("Aragorn", RaceType.HUMAIN, ClassType.GUERRIER),
         Heros("Legolas", RaceType.ELFE, ClassType.RODEUR),
