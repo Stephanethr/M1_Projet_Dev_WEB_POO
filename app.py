@@ -2,6 +2,9 @@ import os
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from back.RPG_DATABASE.heros_db import HerosDb
+from back.RPG_DATABASE.equipement_db import EquipementDb
+from back.RPG_DATABASE.consommable_db import ConsommableDb
+from back.RPG_PLATEAU.rpg_objet import Equipement, Consommable
 from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 from init_db import get_db_connection
@@ -41,13 +44,11 @@ def home():
     # Récupérer les héros associés à l'utilisateur
     cursor.execute('SELECT * FROM heros WHERE proprietaire = ?', (session['user_id'],))
     heroes = cursor.fetchall()
-    print(heroes)
 
     # Mettre les héros en session
     session['heroes'] = [dict(hero) for hero in heroes]
 
     conn.close()
-    print(session['heroes'])
 
     return render_template(
         'home.html',
@@ -67,23 +68,63 @@ def view_hero(hero_id):
     if not hero or hero.proprietaire != session['user_id']:
         flash("Héros introuvable ou accès non autorisé.", 'danger')
         return redirect(url_for('home'))
+    
+    # Charger les équipements et consommables du héros
+    conn = EquipementDb.get_db_connection()
+    cursor = conn.cursor()
 
-    return render_template('view_hero.html', hero={
-        'name': hero.name,
-        'race': hero.race.value,
-        'classe': hero.classe.value,
-        'niveau': hero.niveau,
-        'experience': hero.experience,
-        'force': hero.force,
-        'force_bonus': hero.force_bonus,
-        'endurance': hero.endurance,
-        'endurance_bonus': hero.endurance_bonus,
-        'agilite': hero.agilite,
-        'agilite_bonus': hero.agilite_bonus,
-        'points_vie': hero.points_vie,
-        'points_vie_max': hero.points_vie_max,
-        'position': hero.position
-    })
+    # Récupération des équipements
+    cursor.execute('SELECT * FROM equipements WHERE proprietaire = ?', (hero_id,))
+    equipments = [EquipementDb.get_by_id(row['id']) for row in cursor.fetchall()]
+
+    # Récupération des consommables
+    cursor.execute('SELECT * FROM consommables WHERE proprietaire = ?', (hero_id,))
+    consumables = [ConsommableDb.get_by_id(row['id']) for row in cursor.fetchall()]
+
+    conn.close()
+
+    hero.inventaire = []
+    hero.agilite_bonus = 0
+    hero.endurance_bonus = 0
+    hero.force_bonus = 0
+
+    for e in equipments:
+        temp_obj = Equipement(e.nom, e.type_objet, e.rarete, e.effet, e.equipe)
+        hero.ajouter_objet_inventaire(temp_obj)
+    
+    hero._recalculer_pv()
+
+    # Stockage en session
+    session['equipments'] = [equip.id for equip in equipments]
+    session['consumables'] = [cons.id for cons in consumables]
+
+    # Formattage des données
+
+    return render_template('view_hero.html', hero=hero,
+    equipments=equipments,
+    consumables=consumables)
+
+@app.route('/hero/<int:hero_id>/toggle_equipment/<int:equip_id>')
+def toggle_equipment(hero_id, equip_id):
+
+    # Charger l'équipement
+    equip = EquipementDb.get_by_id(equip_id)
+    print(equip)
+    if not equip or equip.proprietaire != hero_id:
+        flash("Équipement introuvable ou non autorisé.", 'warning')
+        return redirect(url_for('view_hero', hero_id=hero_id))
+
+    # Inversion de l'état "équipé"
+    equip.equipe = not equip.equipe
+    equip.save()  # Mise à jour en base
+
+    # Notification à l'utilisateur
+    action = "équipé" if equip.equipe else "déséquipé"
+    flash(f"L'équipement {equip.nom} a été {action} avec succès.", 'success')
+
+    # Retour à la vue du héros
+    return redirect(url_for('view_hero', hero_id=hero_id))
+
 
 if __name__ == '__main__':
     app.run(debug=True)

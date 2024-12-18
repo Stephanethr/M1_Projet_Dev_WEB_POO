@@ -1,26 +1,29 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Héros - Statistiques</title>
+    <title>Statistiques du Héros</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
     <div class="container mx-auto p-4">
         <h1 class="text-3xl font-bold mb-4">Statistiques de {{ hero.name }}</h1>
-        <div class="bg-white shadow-md rounded-lg p-6">
+
+        <!-- Informations Générales -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
             <h2 class="text-xl font-semibold">Informations Générales</h2>
             <ul class="mt-4 space-y-2">
                 <li><strong>Nom :</strong> {{ hero.name }}</li>
-                <li><strong>Race :</strong> {{ hero.race }}</li>
-                <li><strong>Classe :</strong> {{ hero.classe }}</li>
+                <li><strong>Race :</strong> {{ hero.race.value }}</li>
+                <li><strong>Classe :</strong> {{ hero.classe.value }}</li>
                 <li><strong>Niveau :</strong> {{ hero.niveau }}</li>
                 <li><strong>Expérience :</strong> {{ hero.experience }}</li>
             </ul>
         </div>
 
-        <div class="bg-white shadow-md rounded-lg p-6 mt-4">
+        <!-- Statistiques -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
             <h2 class="text-xl font-semibold">Statistiques</h2>
             <ul class="mt-4 space-y-2">
                 <li><strong>Force :</strong> {{ hero.force }} (+{{ hero.force_bonus }})</li>
@@ -30,6 +33,52 @@
             </ul>
         </div>
 
+
+        <!-- Equipements -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold">Équipements</h2>
+            <ul class="mt-4 space-y-4">
+                {% if equipments %}
+                    {% for equip in equipments %}
+                    <li class="flex justify-between items-center">
+                        <div>
+                            <strong>{{ equip.nom }}</strong> ({{ equip.type_objet }} - {{ equip.rarete.value }})<br>
+                            <em>Effets :</em> {{ equip.effet }}<br>
+                            <em>Status :</em> {{ "Équipé" if equip.equipe else "Non équipé" }}
+                        </div>
+                        <div>
+                            <a href="{{ url_for('toggle_equipment', hero_id=hero.id, equip_id=equip.id) }}"
+                               class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                {{ "Déséquiper" if equip.equipe else "Équiper" }}
+                            </a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <p>Aucun équipement trouvé.</p>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Consommables -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold">Consommables</h2>
+            <ul class="mt-4 space-y-2">
+                {% if consumables %}
+                    {% for cons in consumables %}
+                    <li>
+                        <strong>{{ cons.nom }}</strong> ({{ cons.type_objet }} - {{ cons.rarete.value }}) <br>
+                        <em>Effets :</em> {{ cons.effet }}<br>
+                        <em>Quantité :</em> {{ cons.quantite }}
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <p>Aucun consommable trouvé.</p>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Retour -->
         <div class="mt-6">
             <a href="{{ url_for('home') }}" class="text-blue-600 hover:underline">Retour à la page d'accueil</a>
         </div>
