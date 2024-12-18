@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créer un Héros</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 h-full flex justify-center items-center min-h-screen">
+    <div class="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+        <h1 class="text-2xl font-bold text-gray-900 mb-4">Créer un Nouveau Héros</h1>
+        <form action="{{ url_for('insert_hero') }}" method="post" class="space-y-4">
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700">Nom du Héros</label>
+                <input type="text" id="name" name="name" required
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <div>
+                <label for="classe" class="block text-sm font-medium text-gray-700">Classe</label>
+                <select id="classe" name="classe" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">--Choisissez une classe--</option>
+                    <option value="Guerrier">Guerrier</option>
+                    <option value="Mage">Mage</option>
+                    <option value="Archer">Archer</option>
+                    <!-- Ajouter d'autres classes si nécessaire -->
+                </select>
+            </div>
+            <div>
+                <label for="race" class="block text-sm font-medium text-gray-700">Race</label>
+                <select id="race" name="race" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="Humain">Humain</option>
+                    <option value="Elfe">Elfe</option>
+                    <option value="Nain">Nain</option>
+                    <option value="Orc">Orc</option>
+                    <!-- Ajouter d'autres races si nécessaire -->
+                </select>
+            </div>
+            <div class="mt-6">
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Créer
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -8,7 +8,9 @@ from back.RPG_PLATEAU.rpg_objet import Equipement, Consommable
 from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 from init_db import get_db_connection
-from back.hero_class import Hero
+from back.RPG_PLATEAU.rpg_heros import *
+from back.RPG_PLATEAU.rpg_avatar import *
+from back.RPG_DATABASE.heros_db import *
 
 # Charger les variables d'environnement
 load_dotenv()
@@ -131,6 +133,8 @@ if __name__ == '__main__':
 
 @app.route('/create_hero', methods=['POST'])
 def create_hero():
+@app.route('/insert_hero', methods=['POST'])
+def insert_hero():
     if 'loggedin' not in session:
         flash("Veuillez vous connecter.", 'info')
         return redirect(url_for('login'))
@@ -138,26 +142,45 @@ def create_hero():
     # Récupérer les données du formulaire
     name = request.form.get('name')
     classe = request.form.get('classe')
+    race = request.form.get('race')
 
-    if not name or not classe:
+    # Vérifications des champs obligatoires
+    if not name or not classe or not race:
         flash("Tous les champs sont obligatoires pour créer un héros.", 'danger')
-        return redirect(url_for('home'))
+        return redirect(url_for('create_hero_form'))
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    try:
+        # Convertir les valeurs en enums
+        class_type = ClassType(classe)
+        race_type = RaceType(race)
+    except ValueError:
+        flash("Classe ou race invalide.", 'danger')
+        return redirect(url_for('create_hero_form'))
 
-    # Insérer un nouveau héros dans la base de données
-    cursor.execute('''
-        INSERT INTO heroes (name, classe, level, xp, user_id)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (name, classe, 1, 0, session['user_id']))
-    conn.commit()
+    try:
+        # Créer le héros
+        hero = Heros(name, race_type, class_type)
 
-    cursor.close()
-    conn.close()
+        # Sauvegarder le héros dans la base de données
+        hero_db = HerosDb(hero)
+        hero_db.save()
 
-    flash(f"Héros {name} créé avec succès !", 'success')
+        flash(f"Héros {name} créé avec succès !", 'success')
+    except ValueError as e:
+        # Gestion des erreurs de validation dans la classe `Heros`
+        flash(str(e), 'danger')
+        return redirect(url_for('create_hero_form'))
+
     return redirect(url_for('home'))
+
+@app.route('/create_hero', methods=['GET'])
+def create_hero():
+    if 'loggedin' not in session:
+        flash("Veuillez vous connecter.", 'info')
+        return redirect(url_for('login'))
+
+    return render_template('create_hero.html')
+
 
 @app.route('/heroes')
 def list_heroes():
