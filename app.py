@@ -1,6 +1,7 @@
 import os
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash, session
+from back.RPG_DATABASE.heros_db import HerosDb
 from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 from init_db import get_db_connection
@@ -55,6 +56,37 @@ def home():
         user_last_login=user['user_date_login'],
         heroes=session['heroes']
     )
+
+@app.route('/view_hero/<int:hero_id>')
+def view_hero(hero_id):
+    if 'loggedin' not in session:
+        flash("Veuillez vous connecter.", 'info')
+        return redirect(url_for('login'))
+
+    hero = HerosDb.get_by_id(hero_id)
+    if not hero or hero.proprietaire != session['user_id']:
+        flash("Héros introuvable ou accès non autorisé.", 'danger')
+        return redirect(url_for('home'))
+
+    return render_template('view_hero.html', hero={
+        'name': hero.name,
+        'race': hero.race.value,
+        'classe': hero.classe.value,
+        'niveau': hero.niveau,
+        'experience': hero.experience,
+        'force': hero.force,
+        'force_bonus': hero.force_bonus,
+        'endurance': hero.endurance,
+        'endurance_bonus': hero.endurance_bonus,
+        'agilite': hero.agilite,
+        'agilite_bonus': hero.agilite_bonus,
+        'points_vie': hero.points_vie,
+        'points_vie_max': hero.points_vie_max,
+        'position': hero.position
+    })
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 @app.route('/create_hero', methods=['POST'])
 def create_hero():
