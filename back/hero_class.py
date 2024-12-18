@@ -1,3 +1,5 @@
+import sqlite3
+
 from back.avatar_class import Avatar
 import math
 from datetime import date
